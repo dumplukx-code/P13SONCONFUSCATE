@@ -1,0 +1,326 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local accentColor = Color3.fromRGB(215, 0, 0)
+
+local remotePaths = {
+    {"Police", "Search"},
+    {"Police", "SearchPlayer"},
+    {"PoliceSystem", "Search"},
+    {"Remotes", "Search"},
+    {"Remotes", "PoliceSearch"},
+    {"Remotes", "SearchPlayer"},
+    {"Events", "Search"},
+    {"Events", "PoliceSearch"},
+    {"GameEvents", "Search"},
+    {"MainRemotes", "Search"},
+    {"Core", "Search"},
+    {"Systems", "Police", "Search"}
+}
+
+local function findRemote(container, depth)
+    depth = depth or 0
+    if depth > 4 then return nil end
+    
+    for _, child in ipairs(container:GetChildren()) do
+        local nameLower = child.Name:lower()
+        
+        if nameLower:find("search") or nameLower:find("police") then
+            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
+                return child
+            end
+            local found = findRemote(child, depth + 1)
+            if found then return found end
+        end
+    end
+    return nil
+end
+
+local foundRemote = findRemote(ReplicatedStorage, 0)
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "P13SON_Confiscate"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game:GetService("CoreGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 260, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -130, 0.4, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 10)
+frameCorner.Parent = mainFrame
+
+local backgroundImage = Instance.new("ImageLabel")
+backgroundImage.Size = UDim2.new(1, 0, 1, 0)
+backgroundImage.BackgroundTransparency = 1
+backgroundImage.Image = "rbxassetid://118853336816284"
+backgroundImage.ImageTransparency = 0.6
+backgroundImage.ScaleType = Enum.ScaleType.Crop
+backgroundImage.ZIndex = 0
+backgroundImage.Parent = mainFrame
+
+local backgroundCorner = Instance.new("UICorner")
+backgroundCorner.CornerRadius = UDim.new(0, 10)
+backgroundCorner.Parent = backgroundImage
+
+local headerFrame = Instance.new("Frame")
+headerFrame.Size = UDim2.new(1, 0, 0, 50)
+headerFrame.BackgroundColor3 = accentColor
+headerFrame.BorderSizePixel = 0
+headerFrame.ZIndex = 2
+headerFrame.Parent = mainFrame
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 10)
+headerCorner.Parent = headerFrame
+
+local headerDivider = Instance.new("Frame")
+headerDivider.Size = UDim2.new(1, 0, 0.5, 0)
+headerDivider.Position = UDim2.new(0, 0, 0.5, 0)
+headerDivider.BackgroundColor3 = accentColor
+headerDivider.BorderSizePixel = 0
+headerDivider.ZIndex = 2
+headerDivider.Parent = headerFrame
+
+-- Logo Image
+local logoImage = Instance.new("ImageLabel")
+logoImage.Size = UDim2.new(0, 28, 0, 28)
+logoImage.Position = UDim2.new(0, 8, 0.5, -14)
+logoImage.BackgroundTransparency = 1
+logoImage.Image = "rbxassetid://129210067804783"
+logoImage.ScaleType = Enum.ScaleType.Fit
+logoImage.ZIndex = 3
+logoImage.Parent = headerFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -45, 1, 0)
+titleLabel.Position = UDim2.new(0, 42, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "P13SON CONFISCATE"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 13
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.ZIndex = 3
+titleLabel.Parent = headerFrame
+
+local remoteStatusLabel = Instance.new("TextLabel")
+remoteStatusLabel.Size = UDim2.new(0.9, 0, 0, 16)
+remoteStatusLabel.Position = UDim2.new(0.05, 0, 0, 54)
+remoteStatusLabel.BackgroundTransparency = 1
+remoteStatusLabel.Text = foundRemote and (" Remote Found: " .. foundRemote.Name) or " No Remote Found - Manual Mode"
+remoteStatusLabel.TextColor3 = foundRemote and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+remoteStatusLabel.Font = Enum.Font.Gotham
+remoteStatusLabel.TextSize = 10
+remoteStatusLabel.ZIndex = 3
+remoteStatusLabel.Parent = mainFrame
+
+local playerScrollFrame = Instance.new("ScrollingFrame")
+playerScrollFrame.Size = UDim2.new(0.9, 0, 0, 160)
+playerScrollFrame.Position = UDim2.new(0.05, 0, 0, 75)
+playerScrollFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+playerScrollFrame.BackgroundTransparency = 0.3
+playerScrollFrame.BorderSizePixel = 0
+playerScrollFrame.ScrollBarThickness = 3
+playerScrollFrame.ScrollBarImageColor3 = accentColor
+playerScrollFrame.ZIndex = 3
+playerScrollFrame.Parent = mainFrame
+
+local scrollCorner = Instance.new("UICorner")
+scrollCorner.CornerRadius = UDim.new(0, 6)
+scrollCorner.Parent = playerScrollFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 3)
+listLayout.Parent = playerScrollFrame
+
+local listPadding = Instance.new("UIPadding")
+listPadding.PaddingLeft = UDim.new(0, 4)
+listPadding.PaddingRight = UDim.new(0, 4)
+listPadding.PaddingTop = UDim.new(0, 4)
+listPadding.Parent = playerScrollFrame
+
+local manualPathBox = Instance.new("TextBox")
+manualPathBox.Size = UDim2.new(0.9, 0, 0, 28)
+manualPathBox.Position = UDim2.new(0.05, 0, 0, 243)
+manualPathBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+manualPathBox.BackgroundTransparency = 0.3
+manualPathBox.Text = ""
+manualPathBox.PlaceholderText = "Manual Remote Path (e.g. Police/Search)"
+manualPathBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+manualPathBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+manualPathBox.Font = Enum.Font.Gotham
+manualPathBox.TextSize = 10
+manualPathBox.ZIndex = 3
+manualPathBox.Parent = mainFrame
+
+local manualPathCorner = Instance.new("UICorner")
+manualPathCorner.CornerRadius = UDim.new(0, 6)
+manualPathCorner.Parent = manualPathBox
+
+local selectPlayerButton = Instance.new("TextButton")
+selectPlayerButton.Size = UDim2.new(0.9, 0, 0, 36)
+selectPlayerButton.Position = UDim2.new(0.05, 0, 0, 276)
+selectPlayerButton.BackgroundColor3 = accentColor
+selectPlayerButton.Text = "CONFISCATE PLAYER"
+selectPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+selectPlayerButton.Font = Enum.Font.GothamBold
+selectPlayerButton.TextSize = 12
+selectPlayerButton.ZIndex = 3
+selectPlayerButton.Parent = mainFrame
+
+local selectButtonCorner = Instance.new("UICorner")
+selectButtonCorner.CornerRadius = UDim.new(0, 8)
+selectButtonCorner.Parent = selectPlayerButton
+
+local selectedPlayer = nil
+
+local function refreshPlayerList()
+    for _, child in ipairs(playerScrollFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local playerButton = Instance.new("TextButton")
+            playerButton.Size = UDim2.new(1, 0, 0, 28)
+            playerButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            playerButton.BackgroundTransparency = 0.3
+            playerButton.Text = player.Name
+            playerButton.TextColor3 = Color3.fromRGB(210, 210, 210)
+            playerButton.Font = Enum.Font.Gotham
+            playerButton.TextSize = 12
+            playerButton.TextXAlignment = Enum.TextXAlignment.Left
+            playerButton.ZIndex = 4
+            playerButton.Parent = playerScrollFrame
+            
+            local buttonCorner = Instance.new("UICorner")
+            buttonCorner.CornerRadius = UDim.new(0, 5)
+            buttonCorner.Parent = playerButton
+            
+            local padding = Instance.new("UIPadding")
+            padding.PaddingLeft = UDim.new(0, 10)
+            padding.Parent = playerButton
+            
+            playerButton.MouseButton1Click:Connect(function()
+                selectedPlayer = player
+                selectPlayerButton.Text = " CONFISCATE " .. player.Name:upper()
+                
+                for _, child in ipairs(playerScrollFrame:GetChildren()) do
+                    if child:IsA("TextButton") then
+                        child.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                        child.BackgroundTransparency = 0.3
+                    end
+                end
+                
+                playerButton.BackgroundColor3 = accentColor
+                playerButton.BackgroundTransparency = 0.2
+            end)
+        end
+    end
+    
+    playerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
+end
+
+refreshPlayerList()
+
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(refreshPlayerList)
+
+local function performSearch(target)
+    local manualPath = manualPathBox.Text
+    if manualPath ~= "" then
+        local pathParts = {}
+        for part in manualPath:gsub("/", "."):gmatch("[^%.]+") do
+            table.insert(pathParts, part)
+        end
+        
+        local success, remote = pcall(function()
+            local current = ReplicatedStorage
+            for _, partName in ipairs(pathParts) do
+                current = current:WaitForChild(partName, 2)
+            end
+            return current
+        end)
+        
+        if success and remote then
+            remoteStatusLabel.Text = " Manual Remote: " .. remote.Name
+            remoteStatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+            
+            if remote:IsA("RemoteEvent") then
+                remote:FireServer(target)
+            elseif remote:IsA("RemoteFunction") then
+                remote:InvokeServer(target)
+            end
+            return true
+        end
+    end
+    
+    if foundRemote then
+        if foundRemote:IsA("RemoteEvent") then
+            foundRemote:FireServer(target)
+        elseif foundRemote:IsA("RemoteFunction") then
+            foundRemote:InvokeServer(target)
+        end
+        return true
+    end
+    
+    return false
+end
+
+selectPlayerButton.MouseButton1Click:Connect(function()
+    if selectedPlayer and selectedPlayer.Character then
+        local success = performSearch(selectedPlayer.Character)
+        if success then
+            selectPlayerButton.Text = " CONFIRMING..."
+            selectPlayerButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            task.wait(1.5)
+            selectPlayerButton.BackgroundColor3 = accentColor
+            selectPlayerButton.Text = " CONFISCATE " .. selectedPlayer.Name:upper()
+        else
+            selectPlayerButton.Text = " NO REMOTE FOUND"
+            task.wait(2)
+            selectPlayerButton.Text = " CONFISCATE " .. selectedPlayer.Name:upper()
+        end
+    else
+        selectPlayerButton.Text = " INVALID TARGET"
+        task.wait(1.5)
+        selectPlayerButton.Text = "CONFISCATE PLAYER"
+    end
+end)
+
+local dragging = false
+local dragStart
+local startPos
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+return
